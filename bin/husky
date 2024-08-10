@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+BINDIR=$(dirname $(node -pe "require.resolve('husky')"))
+
+if [[ -z "$BINDIR" ]]; then
+  echo "Required package 'husky' not found"
+  exit 1
+fi
+
+# Redirect to original husky bin
+$BINDIR/bin.js $@

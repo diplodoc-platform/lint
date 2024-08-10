@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "Diplodoc platform internal utility set for linting",
   "bin": {
-    "lint": "./bin/lint"
+    "lint": "./bin/lint",
+    "husky": "./bin/husky"
   },
   "scripts": {
-    "test": "exit 0"
+    "test": "cd test && npm start"
   },
   "exports": {
     "./eslint-config": "./eslint-common-config.js",
