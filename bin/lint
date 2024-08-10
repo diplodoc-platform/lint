@@ -20,7 +20,7 @@ while (( $# )); do
     shift
 done
 
-if [[ -n "$INIT$UPDATE"]]; then
+if [[ -n "$INIT$UPDATE" ]]; then
   echo "[@diplodoc/lint] Add initial lint configs"
   cp -r "$SRCDIR/scaffolding/" .
 
@@ -32,7 +32,7 @@ if [[ -n $INIT ]]; then
   echo "[@diplodoc/lint] Extend package.json configuration"
   node "$SRCDIR/scripts/modify-package.js"
 
-  $BINDIR/husky install
+  $BINDIR/husky init
 
   exit 0
 fi
