@@ -16,7 +16,7 @@ npm install --save-dev @diplodoc/lint
 Add initial configuration
 
 ```sh
-npx @diplodoc/lint install
+npx @diplodoc/lint init
 git add --all && git commit -m 'chore: init lint'
 ```
 

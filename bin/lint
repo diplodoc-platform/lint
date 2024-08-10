@@ -10,7 +10,7 @@ while (( $# )); do
         fix ) :
             FIX=1
             ;;
-        install|init ) :
+        init ) :
             INIT=1
             ;;
         update ) :
