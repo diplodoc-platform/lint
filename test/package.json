@@ -1,0 +1,13 @@
+{
+  "name": "test",
+  "private": true,
+  "workspaces": [
+    "../"
+  ],
+  "scripts": {
+    "start": "npm i @diplodoc/lint && npx @diplodoc/lint init"
+  },
+  "dependencies": {
+    "@diplodoc/lint": "^1.0.0"
+  }
+}

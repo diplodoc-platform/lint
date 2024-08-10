@@ -20,7 +20,7 @@ function configure(command, impl) {
 }
 
 configure('lint', 'lint init && lint');
-configure('lint:fix', 'lint init && lint --fix');
+configure('lint:fix', 'lint init && lint fix');
 configure('pre-commit', 'lint init && lint-staged');
 configure('prepare', 'husky install || true');
 

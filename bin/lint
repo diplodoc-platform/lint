@@ -7,7 +7,7 @@ SRCDIR=$(dirname $(dirname $(node -pe "require('fs').realpathSync('$0')")))
 
 while (( $# )); do
     case "$1" in
-        --fix ) :
+        fix ) :
             FIX=1
             ;;
         install|init ) :
