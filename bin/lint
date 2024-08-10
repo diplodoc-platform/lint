@@ -2,8 +2,8 @@
 
 set -e
 
-BINDIR=$(dirname $0)
-SRCDIR=$(dirname $(dirname $(node -pe "require('fs').realpathSync('$0')")))
+BINDIR=$(dirname "$0")
+SRCDIR=$(dirname $(dirname $(node -pe "require('fs').realpathSync('${0//\\//}')")))
 
 while (( $# )); do
     case "$1" in

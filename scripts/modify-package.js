@@ -1,5 +1,7 @@
-const filename = process.cwd() + '/package.json';
-const {readFileSync, writeFileSync} = require('fs');
+const {join} = require('node:path');
+const {readFileSync, writeFileSync} = require('node:fs');
+
+const filename = join(process.cwd(), 'package.json');
 
 let pkg;
 try {

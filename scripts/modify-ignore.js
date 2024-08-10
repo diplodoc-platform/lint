@@ -1,4 +1,5 @@
-const {readFileSync, writeFileSync} = require('fs');
+const {join} = require('node:path');
+const {readFileSync, writeFileSync} = require('node:fs');
 
 const SYSTEM = [
     '.idea',
@@ -49,7 +50,7 @@ const ignores = {
 };
 
 for (const [file, list] of Object.entries(ignores)) {
-    const filename = process.cwd() + '/' + file;
+    const filename = join(process.cwd(), file);
 
     let source;
     try {
