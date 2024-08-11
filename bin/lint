@@ -26,6 +26,10 @@ if [[ -n "$INIT$UPDATE" ]]; then
 
   echo "[@diplodoc/lint] Extend .ignore configuration"
   node "$SRCDIR/scripts/modify-ignore.js"
+
+  if [[ -z $INIT ]]; then
+    exit 0
+  fi
 fi
 
 if [[ -n $INIT ]]; then
@@ -40,17 +44,17 @@ fi
 if [[ -n $FIX ]]; then
   echo "Run linters in fix mode"
 
-  $BINDIR/eslint '**/*.{js,jsx,ts,tsx}' --fix
-  $BINDIR/prettier --write 'src/**/*.{js,jsx,ts,tsx}'
-  $BINDIR/stylelint src/**/*.scss --fix
+  $BINDIR/eslint '**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}' --fix
+  $BINDIR/prettier --write '**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}'
+  $BINDIR/stylelint '**/*.{css,scss}' --fix
 
   exit 0
 fi
 
 echo "Run linters"
 
-$BINDIR/eslint '**/*.{js,jsx,ts,tsx}'
-$BINDIR/prettier --check 'src/**/*.{js,jsx,ts,tsx}'
-$BINDIR/stylelint src/**/*.scss
-
-
+$BINDIR/eslint '**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}'
+$BINDIR/prettier --check '**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}'
+if [[ -n $(find . -type f -name '*.css' -name '*.scss' | grep -vwFf .stylelintignore) ]]; then
+  $BINDIR/stylelint '**/*.{css,scss}'
+fi
