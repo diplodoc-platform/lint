@@ -21,9 +21,9 @@ function configure(command, impl, strict = true) {
     }
 }
 
-configure('lint', 'lint init && lint');
-configure('lint:fix', 'lint init && lint fix');
-configure('pre-commit', 'lint init && lint-staged');
+configure('lint', 'lint update && lint');
+configure('lint:fix', 'lint update && lint fix');
+configure('pre-commit', 'lint update && lint-staged');
 configure('prepare', 'husky install || true', false);
 
 writeFileSync(filename, JSON.stringify(pkg, null, 2), 'utf8');
