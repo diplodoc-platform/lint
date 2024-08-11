@@ -4,7 +4,12 @@
   "description": "Diplodoc platform internal utility set for linting",
   "bin": {
     "lint": "./bin/lint",
-    "husky": "./bin/husky"
+    "husky": "./bin/husky",
+    "eslint": "./bin/eslint",
+    "prettier": "./bin/prettier",
+    "stylelint": "./bin/stylelint",
+    "lint-staged": "./bin/lint-staged",
+    "svgo": "./bin/svgo"
   },
   "scripts": {
     "test": "cd test && npm start"

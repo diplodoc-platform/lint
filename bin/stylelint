@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+BINDIR=$(dirname $(node -pe "require.resolve('stylelint/package.json')"))
+
+if [[ -z "$BINDIR" ]]; then
+  echo "Required package 'stylelint' not found"
+  exit 1
+fi
+
+# Redirect to original stylelint bin
+$BINDIR/bin/stylelint.mjs $@

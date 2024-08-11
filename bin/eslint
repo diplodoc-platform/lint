@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+BINDIR=$(dirname $(node -pe "require.resolve('eslint/package.json')"))
+
+if [[ -z "$BINDIR" ]]; then
+  echo "Required package 'eslint' not found"
+  exit 1
+fi
+
+# Redirect to original eslint bin
+$BINDIR/bin/eslint.js $@

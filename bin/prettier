@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+BINDIR=$(dirname $(node -pe "require.resolve('prettier')"))
+
+if [[ -z "$BINDIR" ]]; then
+  echo "Required package 'prettier' not found"
+  exit 1
+fi
+
+# Redirect to original prettier bin
+$BINDIR/bin/prettier.cjs $@

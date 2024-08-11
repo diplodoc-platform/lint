@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+BINDIR=$(dirname $(node -pe "require.resolve('svgo/package.json')"))
+
+if [[ -z "$BINDIR" ]]; then
+  echo "Required package 'svgo' not found"
+  exit 1
+fi
+
+# Redirect to original svgo bin
+$BINDIR/bin/svgo $@
