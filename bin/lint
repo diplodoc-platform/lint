@@ -22,7 +22,7 @@ done
 
 if [[ -n "$INIT$UPDATE" ]]; then
   echo "[@diplodoc/lint] Add initial lint configs"
-  cp -r "$SRCDIR/scaffolding/" .
+  cp -a "$SRCDIR/scaffolding/." .
 
   echo "[@diplodoc/lint] Extend .ignore configuration"
   node "$SRCDIR/scripts/modify-ignore.js"
@@ -46,7 +46,9 @@ if [[ -n $FIX ]]; then
 
   $BINDIR/eslint '**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}' --fix
   $BINDIR/prettier --write '**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}'
-  $BINDIR/stylelint '**/*.{css,scss}' --fix
+  if [[ -n $(find . -type f -name '*.css' -name '*.scss' | grep -vwFf .stylelintignore) ]]; then
+    $BINDIR/stylelint '**/*.{css,scss}' --fix
+  fi
 
   exit 0
 fi

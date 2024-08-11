@@ -5,7 +5,12 @@ module.exports = {
         process.env.npm_command && '@gravity-ui/eslint-config/prettier',
     ].filter(Boolean),
     overrides: [{
-        files: ['.eslintrc.js'],
+        files: [
+            '.eslintrc.js',
+            '.prettierrc.js',
+            '.stylelintrc.js',
+            '.lintstagedrc.js',
+        ],
         env: {
             node: true,
         },

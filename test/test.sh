@@ -4,4 +4,4 @@ set -e
 
 npm i @diplodoc/lint
 npx @diplodoc/lint init
-npm run lint
+npm run lint:fix
