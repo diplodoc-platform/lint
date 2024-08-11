@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.2](https://github.com/diplodoc-platform/lint/compare/v1.0.1...v1.0.2) (2024-08-11)
+
+
+### Bug Fixes
+
+* Change init staps sequence ([7f8aaa5](https://github.com/diplodoc-platform/lint/commit/7f8aaa54f758dbfe58adbbda6ec0a9e5cb556baa))
+* Do not rewrite husky npm script ([f0b1b85](https://github.com/diplodoc-platform/lint/commit/f0b1b85e2ba86cafc85d91f844ebb09c081c8ed2))
+* Make internal bins force executable ([d69f85e](https://github.com/diplodoc-platform/lint/commit/d69f85e1e60e0cd6fb9f7c3b0648785191eb065d))
+* Unignore rc configs ([cf201c6](https://github.com/diplodoc-platform/lint/commit/cf201c694ee4de91d6c7a98326ec07ee52254fb8))
+
 ## [1.0.1](https://github.com/diplodoc-platform/lint/compare/v1.0.0...v1.0.1) (2024-08-11)
 
 
