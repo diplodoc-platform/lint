@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.3](https://github.com/diplodoc-platform/lint/compare/v1.0.2...v1.0.3) (2024-08-11)
+
+
+### Bug Fixes
+
+* Force update prepare script ([67ee6d2](https://github.com/diplodoc-platform/lint/commit/67ee6d26718085e124b9feba50f2a04e685f7d17))
+* Remove overrides for [@typescript-eslint](https://github.com/typescript-eslint) ([c1f017a](https://github.com/diplodoc-platform/lint/commit/c1f017a44a0fb82609b61b75eb50ef9154180d26))
+
 ## [1.0.2](https://github.com/diplodoc-platform/lint/compare/v1.0.1...v1.0.2) (2024-08-11)
 
 
