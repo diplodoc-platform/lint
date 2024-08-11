@@ -4,9 +4,12 @@ module.exports = {
         '@gravity-ui/eslint-config',
         process.env.npm_command && '@gravity-ui/eslint-config/prettier',
     ].filter(Boolean),
-    parserOptions: {
-        project: ["./tsconfig.json"]
-    },
+    overrides: [{
+        files: ['.eslintrc.js'],
+        env: {
+            node: true,
+        },
+    }],
     rules: {
         'callback-return': 'off',
         'consistent-return': 'off',
