@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/diplodoc-platform/lint/compare/v1.0.3...v1.1.0) (2024-08-11)
+
+
+### Features
+
+* Handle svgx extension ([56b3242](https://github.com/diplodoc-platform/lint/commit/56b3242d8fb93f2265dd2c63e8e993b21dd81cab))
+
+
+### Bug Fixes
+
+* Fix prettier errors ([cc2ce97](https://github.com/diplodoc-platform/lint/commit/cc2ce97f2c94fed02849f99f5f2d8b13b7655e76))
+
 ## [1.0.3](https://github.com/diplodoc-platform/lint/compare/v1.0.2...v1.0.3) (2024-08-11)
 
 
