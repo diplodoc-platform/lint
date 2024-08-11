@@ -5,7 +5,7 @@
     "../"
   ],
   "scripts": {
-    "start": "npm i @diplodoc/lint && npx @diplodoc/lint init"
+    "start": "sh ./test.sh"
   },
   "dependencies": {
     "@diplodoc/lint": "^1.0.0"
