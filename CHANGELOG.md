@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/diplodoc-platform/lint/compare/v1.1.0...v1.1.1) (2024-08-12)
+
+
+### Bug Fixes
+
+* Fix bin resolution for metapackage structure ([ab75994](https://github.com/diplodoc-platform/lint/commit/ab759946f7aad0cba84458bcbf3404e09c239dec))
+
 ## [1.1.0](https://github.com/diplodoc-platform/lint/compare/v1.0.3...v1.1.0) (2024-08-11)
 
 
