@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/diplodoc-platform/lint/compare/v1.1.1...v1.1.2) (2024-08-13)
+
+
+### Bug Fixes
+
+* Handle jest config ([8df332d](https://github.com/diplodoc-platform/lint/commit/8df332d2c4ec1f44b01ab9b7955df23ca784cad8))
+
 ## [1.1.1](https://github.com/diplodoc-platform/lint/compare/v1.1.0...v1.1.1) (2024-08-12)
 
 
