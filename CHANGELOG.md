@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/diplodoc-platform/lint/compare/v1.1.2...v1.1.3) (2024-08-14)
+
+
+### Bug Fixes
+
+* Fix dummy error in packages init ([a2c34f4](https://github.com/diplodoc-platform/lint/commit/a2c34f475f9463ad0dc065a64825257aa72600ba))
+
 ## [1.1.2](https://github.com/diplodoc-platform/lint/compare/v1.1.1...v1.1.2) (2024-08-13)
 
 
