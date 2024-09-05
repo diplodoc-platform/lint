@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/diplodoc-platform/lint/compare/v1.1.3...v1.2.0) (2024-09-05)
+
+
+### Features
+
+* Parse import asserts ([8f314eb](https://github.com/diplodoc-platform/lint/commit/8f314ebec4ede6d48f77ea8258f2c3dfc16247a8))
+
+
+### Bug Fixes
+
+* Fix packagelock ([149b4d9](https://github.com/diplodoc-platform/lint/commit/149b4d94b42c7c8c667f5c6e73236b3590a87e1e))
+
 ## [1.1.3](https://github.com/diplodoc-platform/lint/compare/v1.1.2...v1.1.3) (2024-08-14)
 
 
