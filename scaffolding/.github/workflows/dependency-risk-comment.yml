@@ -1,0 +1,46 @@
+name: Dependency Risk Comment
+
+# This privileged workflow runs only trusted code from the default branch. It
+# consumes text produced by the unprivileged pull_request workflow and never
+# checks out or executes pull-request code.
+on:
+  workflow_run:
+    workflows: ['Dependency Risk Assessment']
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+
+jobs:
+  comment:
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion != 'cancelled' && github.event.workflow_run.pull_requests[0].number != null
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download assessment artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: dependency-risk-${{ github.event.workflow_run.pull_requests[0].number }}
+          path: artifacts/dependency-risk
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate artifact binding
+        env:
+          EXPECTED_PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          node -e "const fs=require('fs'); const m=JSON.parse(fs.readFileSync('artifacts/dependency-risk/metadata.json')); if(String(m.pr)!==process.env.EXPECTED_PR || m.headSha!==process.env.EXPECTED_SHA) throw new Error('Assessment artifact does not match workflow run'); const size=fs.statSync('artifacts/dependency-risk/comment.md').size; if(size<1 || size>65536) throw new Error('Invalid assessment comment size');"
+
+      - name: Post structured risk comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          gh pr comment "$PR_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --edit-last \
+            --create-if-none \
+            --body-file artifacts/dependency-risk/comment.md

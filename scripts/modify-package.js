@@ -22,7 +22,10 @@ const LEGACY_PATTERNS = {
         /^lint update && lint:fix$/,
         /^@diplodoc\/(lint|infra) update && lint fix$/,
     ],
-    'pre-commit': [/^lint update && lint-staged$/, /^@diplodoc\/(lint|infra) update && lint-staged$/],
+    'pre-commit': [
+        /^lint update && lint-staged$/,
+        /^@diplodoc\/(lint|infra) update && lint-staged$/,
+    ],
 };
 
 function configure(command, impl, {force = false} = {}) {
