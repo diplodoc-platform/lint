@@ -29,6 +29,9 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION || '24' }}
 
+      - name: Install locked dependencies safely
+        run: npm ci --ignore-scripts
+
       - name: Resolve @diplodoc/infra
         id: infra
         run: |
@@ -39,10 +42,6 @@ jobs:
           else
             echo "path=" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Install locked dependencies (fallback)
-        if: steps.infra.outputs.path == ''
-        run: npm ci --ignore-scripts
 
       - name: Run exact-pin enforcement
         run: |

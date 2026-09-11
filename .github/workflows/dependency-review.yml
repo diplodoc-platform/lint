@@ -29,10 +29,4 @@ jobs:
           # License checks are enabled; deny strong copyleft licenses
           # incompatible with the permissive MIT-licensed Diplodoc platform.
           license-check: true
-          deny-licenses: |
-            AGPL-3.0
-            GPL-2.0
-            GPL-3.0
-            LGPL-2.1
-            LGPL-3.0
-            SSPL-1.0
+          deny-licenses: AGPL-3.0, GPL-2.0, GPL-3.0, LGPL-2.1, LGPL-3.0, SSPL-1.0
