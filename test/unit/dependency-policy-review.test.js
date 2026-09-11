@@ -775,6 +775,72 @@ test('CLI: writes comment to file with --comment flag', async () => {
     }
 });
 
+test('CLI: writes machine-readable dependency decision with --json flag', async () => {
+    const tempDir = await createTempDir();
+    try {
+        writeJson(tempDir, 'before.json', {
+            name: '@diplodoc/tabs-extension',
+            version: '1.0.0',
+            dependencies: {svgo: '3.3.2'},
+        });
+        writeJson(tempDir, 'after.json', {
+            name: '@diplodoc/tabs-extension',
+            version: '1.0.0',
+            dependencies: {svgo: '3.3.3'},
+        });
+        const jsonPath = join(tempDir, 'assessment.json');
+        execSync(
+            `node "${SCRIPT}" --registry "${REAL_REGISTRY}" ` +
+                `--before-pkg "${join(tempDir, 'before.json')}" ` +
+                `--after-pkg "${join(tempDir, 'after.json')}" ` +
+                `--json "${jsonPath}" --quiet --repo tabs-extension ` +
+                `--head-sha 0123456789012345678901234567890123456789`,
+            {stdio: 'pipe', env: {...process.env}},
+        );
+        const assessment = JSON.parse(readFile(tempDir, 'assessment.json'));
+        assert.strictEqual(assessment.repository, 'tabs-extension');
+        assert.strictEqual(assessment.headSha, '0123456789012345678901234567890123456789');
+        assert.strictEqual(assessment.hasDependencyChanges, true);
+        assert.strictEqual(assessment.maxRisk, 'high');
+        assert.strictEqual(assessment.verificationProfile, 'document-transform');
+        assert.strictEqual(assessment.summary.total, 1);
+    } finally {
+        await removeTempDir(tempDir);
+    }
+});
+
+test('CLI: machine-readable decision distinguishes manifest edits from dependency changes', async () => {
+    const tempDir = await createTempDir();
+    try {
+        writeJson(tempDir, 'before.json', {
+            name: '@diplodoc/tabs-extension',
+            version: '1.0.0',
+            scripts: {test: 'node test.js'},
+            dependencies: {lodash: '^4.17.21'},
+        });
+        writeJson(tempDir, 'after.json', {
+            name: '@diplodoc/tabs-extension',
+            version: '1.0.0',
+            scripts: {test: 'node test.mjs'},
+            dependencies: {lodash: '^4.17.21'},
+        });
+        const jsonPath = join(tempDir, 'assessment.json');
+        execSync(
+            `node "${SCRIPT}" --registry "${REAL_REGISTRY}" ` +
+                `--before-pkg "${join(tempDir, 'before.json')}" ` +
+                `--after-pkg "${join(tempDir, 'after.json')}" ` +
+                `--json "${jsonPath}" --quiet --repo tabs-extension`,
+            {stdio: 'pipe', env: {...process.env}},
+        );
+        const assessment = JSON.parse(readFile(tempDir, 'assessment.json'));
+        assert.strictEqual(assessment.hasDependencyChanges, false);
+        assert.strictEqual(assessment.verificationProfile, 'standard');
+        assert.strictEqual(assessment.summary.total, 0);
+    } finally {
+        await removeTempDir(tempDir);
+    }
+});
+
 test('CLI: detects transitive changes from lockfile', async () => {
     const tempDir = await createTempDir();
     try {

@@ -26,6 +26,7 @@
  *   --repo <name>         Repository short name (scopes registry entries)
  *   --pr <number>          Pull request number (for posting comment)
  *   --comment <path>       Write the markdown comment to a file instead of stdout
+ *   --json <path>          Write the machine-readable assessment to a JSON file
  *   --post                 Post the comment via `gh pr comment`
  *   --quiet                Suppress informational stdout
  *
@@ -754,6 +755,7 @@ if (require.main === module) {
     const quiet = flags.quiet === true;
     const doPost = flags.post === true;
     const commentFile = flags.comment;
+    const jsonFile = flags.json;
     const prNumber = flags.pr;
     const headSha = flags['head-sha'];
     let compatibilityScore =
@@ -766,7 +768,7 @@ if (require.main === module) {
             'Usage: dependency-policy-review.js --before-pkg <path> --after-pkg <path> ' +
                 '[--before-lock <path>] [--after-lock <path>] [--registry <path>] [--repo <name>] ' +
                 '[--pr <number>] [--head-sha <sha>] [--compatibility-score <0-100>] ' +
-                '[--comment <path>] [--post]',
+                '[--comment <path>] [--json <path>] [--post]',
         );
         process.exit(1);
     }
@@ -826,6 +828,26 @@ if (require.main === module) {
         }
 
         const comment = renderComment(assessment, commentOpts);
+
+        if (jsonFile) {
+            writeFileSync(
+                jsonFile,
+                JSON.stringify(
+                    {
+                        repository: repoName,
+                        headSha: headSha || null,
+                        hasDependencyChanges: assessment.summary.total > 0,
+                        ...assessment,
+                    },
+                    null,
+                    2,
+                ) + '\n',
+                'utf8',
+            );
+            if (!quiet) {
+                console.log(`[@diplodoc/infra] Assessment written to ${jsonFile}`);
+            }
+        }
 
         if (commentFile) {
             writeFileSync(commentFile, comment, 'utf8');
