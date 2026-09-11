@@ -179,7 +179,8 @@ async function main() {
     const flags = parseFlags(process.argv.slice(2));
     const org = flags.org || process.env.PAT_ORG || DEFAULT_ORG;
     const login = flags.login || process.env.PAT_BOT_LOGIN || DEFAULT_BOT_LOGIN;
-    const thresholdDays = Number(flags.threshold || process.env.PAT_THRESHOLD_DAYS) || DEFAULT_THRESHOLD_DAYS;
+    const thresholdDays =
+        Number(flags.threshold || process.env.PAT_THRESHOLD_DAYS) || DEFAULT_THRESHOLD_DAYS;
     const outputFile = typeof flags.output === 'string' ? flags.output : null;
 
     const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;

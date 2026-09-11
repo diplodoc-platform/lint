@@ -1,0 +1,173 @@
+name: Dependency Auto-merge
+
+# Auto-merge workflow for Dependabot PRs (T10.2).
+#
+# This is an infra-only workflow (NOT distributed via scaffolding) that
+# evaluates open Dependabot PRs across all 28 repositories against the 9
+# strict auto-merge conditions defined in T10.1.
+#
+# Phase gating:
+#   - Phase 1 (default): DRY-RUN mode. The workflow evaluates all PRs and
+#     produces an audit log but does NOT merge any PRs. This provides
+#     4–6 weeks of observation data before enabling live merges.
+#   - Phase 2: Set AUTOMERGE_ENABLED=true (repository variable or workflow
+#     dispatch input) to enable live merges for qualifying PRs.
+#
+# Schedule: runs hourly during business hours (UTC 07–18, Mon–Fri) to
+# enforce the 24-hour soak window promptly. Off-hours and weekend PRs are
+# picked up on the next business-hour run.
+#
+# Rollback: set AUTOMERGE_ENABLED=false immediately, then create a reviewed
+# `git revert` pull request for any already-merged change.
+
+on:
+  schedule:
+    # Hourly on weekdays 07:00–18:00 UTC (12 runs/day)
+    - cron: '0 7-18 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      enabled:
+        description: 'Enable live auto-merge (phase 2)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Evaluate and Auto-merge Dependabot PRs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js and install dependencies
+        uses: diplodoc-platform/setup-node-action@v1
+        with:
+          node-version: ${{ vars.NODE_VERSION || '24' }}
+          cache: ''
+
+      # Org-wide GitHub App token. Required repository permissions:
+      # Contents: read, Metadata: read, Pull requests: write, Issues: write,
+      # Checks: read and Commit statuses: read across all 28 target repos.
+      # Administration: read is optional and adds legacy branch-protection
+      # discovery; active rulesets are available through Metadata: read.
+      - name: Generate App token (org-wide)
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.INFRA_APP_ID }}
+          private-key: ${{ secrets.INFRA_APP_PRIVATE_KEY }}
+          owner: diplodoc-platform
+
+      - name: Determine mode
+        id: mode
+        env:
+          AUTOMERGE_ENABLED: ${{ vars.AUTOMERGE_ENABLED }}
+          AUTOMERGE_OBSERVATION_COMPLETE: ${{ vars.AUTOMERGE_OBSERVATION_COMPLETE }}
+        run: |
+          REQUESTED="false"
+          if [ "${{ inputs.enabled }}" = "true" ] || [ "$AUTOMERGE_ENABLED" = "true" ]; then
+            REQUESTED="true"
+          fi
+          if [ "$REQUESTED" = "true" ] && [ "$AUTOMERGE_OBSERVATION_COMPLETE" = "true" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "mode=ENABLED (live merges)" >> "$GITHUB_OUTPUT"
+          elif [ "$REQUESTED" = "true" ]; then
+            echo "::error::Live auto-merge requires AUTOMERGE_OBSERVATION_COMPLETE=true after the documented observation period."
+            exit 1
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "mode=DRY-RUN (audit only)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run auto-merge evaluation
+        id: automerge
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          AUTOMERGE_OBSERVATION_COMPLETE: ${{ vars.AUTOMERGE_OBSERVATION_COMPLETE }}
+        run: |
+          mkdir -p .status
+          ENABLED_FLAG=""
+          if [ "${{ steps.mode.outputs.enabled }}" = "true" ]; then
+            ENABLED_FLAG="--enabled"
+          fi
+          set +e
+          node scripts/auto-merge.js \
+            --all \
+            --output .status/auto-merge-audit.json \
+            --markdown .status/auto-merge-audit.md \
+            $ENABLED_FLAG
+          echo "exit-code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Upload audit log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auto-merge-audit
+          path: .status/auto-merge-audit.*
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Post audit log as tracking issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          if [ ! -f .status/auto-merge-audit.md ]; then
+            echo "No audit file found, skipping issue post."
+            exit 0
+          fi
+          DATE=$(date -u +%Y-%m-%d)
+          TITLE="Auto-merge Audit Log — ${DATE}"
+          EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" \
+            --search "${TITLE} in:title" --state open --json number --limit 1 2>/dev/null || echo "")
+          BODY=$(cat .status/auto-merge-audit.md)
+          if [ -n "$EXISTING" ] && [ "$EXISTING" != "[]" ]; then
+            NUMBER=$(echo "$EXISTING" | jq -r '.[0].number')
+            gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+            echo "Updated existing issue #$NUMBER"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "$TITLE" \
+              --body "$BODY" \
+              --label "dependency-health,auto-merge"
+            echo "Created new audit issue"
+          fi
+
+      - name: Write job summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let audit;
+            try {
+              audit = JSON.parse(fs.readFileSync('.status/auto-merge-audit.json', 'utf8'));
+            } catch (err) {
+              core.warning(`Could not read audit log: ${err.message}`);
+              return;
+            }
+            if (!Array.isArray(audit)) return;
+            const total = audit.length;
+            const allowed = audit.filter((e) => e.allowed).length;
+            const merged = audit.filter((e) => e.merged).length;
+            const errors = audit.filter((e) => e.mergeError).length;
+            const skipped = audit.filter((e) => e.skipped).length;
+            const mode = '${{ steps.mode.outputs.mode }}';
+            await core.summary.addRaw(
+              `## Dependency Auto-merge (${mode})\n\n` +
+              `- Total evaluated: **${total}**\n` +
+              `- Allowed: **${allowed}**\n` +
+              `- Merged: **${merged}**\n` +
+              `- Merge errors: **${errors}**\n` +
+              `- Skipped (dry-run): **${skipped}**\n`,
+            ).write();
+
+      - name: Fail on merge errors
+        if: steps.automerge.outputs.exit-code != '0'
+        run: |
+          echo "::error::Auto-merge workflow encountered errors. See audit log artifact and tracking issue."
+          exit 1

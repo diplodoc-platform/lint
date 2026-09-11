@@ -72,11 +72,7 @@ function commitsAllAuthoredBy(commits, login) {
     if (!Array.isArray(commits) || commits.length === 0) return false;
     return commits.every(
         (c) =>
-            c &&
-            c.author &&
-            c.committer &&
-            c.author.login === login &&
-            c.committer.login === login,
+            c && c.author && c.committer && c.author.login === login && c.committer.login === login,
     );
 }
 

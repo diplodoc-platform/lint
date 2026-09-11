@@ -24,12 +24,12 @@
     "test:unit": "cd test && npm install && node runner.js unit",
     "test:integration": "cd test && npm install && node runner.js integration",
     "test:old": "cd test && npm start",
-    "lint": "exit 0",
-    "lint:fix": "lint fix",
+    "lint": "node bin/lint.js",
+    "lint:fix": "node bin/lint.js fix",
     "pre-commit": "lint-staged",
     "prepare": "husky | exit 0",
-    "typecheck": "exit 0",
-    "build": "exit 0"
+    "typecheck": "node scripts/check-js-syntax.js",
+    "build": "node scripts/validate-package.js"
   },
   "files": [
     "bin",
@@ -38,6 +38,7 @@
     "scripts",
     "tsconfig.json",
     "distribution.yml",
+    "dependency-policy.yml",
     "eslint-common-config.js",
     "eslint-client-config.js",
     "eslint-node-config.js",
@@ -101,16 +102,16 @@
   },
   "overrides": {
     "js-yaml": "^4.1.1",
-    "brace-expansion": "^2.0.2",
-    "minimatch": "^10.0.1",
+    "brace-expansion": "^5.0.8",
+    "minimatch": "^10.2.6",
     "eslint-plugin-import": {
-      "minimatch": "^10.0.1"
+      "minimatch": "^10.2.6"
     },
     "eslint-plugin-jsx-a11y": {
-      "minimatch": "^10.0.1"
+      "minimatch": "^10.2.6"
     },
     "eslint-plugin-react": {
-      "minimatch": "^10.0.1"
+      "minimatch": "^10.2.6"
     }
   }
 }

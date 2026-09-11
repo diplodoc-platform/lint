@@ -119,18 +119,15 @@ function filterChecks(names, excludePatterns = []) {
  */
 function resolveGateConfig(config = {}, repoName) {
     const base = config.ci_gate || {};
-    const override = (config.repos && config.repos[repoName] && config.repos[repoName].ci_gate) || {};
+    const override =
+        (config.repos && config.repos[repoName] && config.repos[repoName].ci_gate) || {};
 
     return {
         rulesetName: override.ruleset_name || base.ruleset_name || DEFAULT_RULESET_NAME,
         // Per-repo patterns are merged onto the global list (not a full replace).
-        excludeChecks: [
-            ...(base.exclude_checks || []),
-            ...(override.exclude_checks || []),
-        ],
+        excludeChecks: [...(base.exclude_checks || []), ...(override.exclude_checks || [])],
         // Explicit pin: when provided, discovery is skipped entirely.
-        requiredChecks:
-            override.required_checks !== undefined ? override.required_checks : null,
+        requiredChecks: override.required_checks !== undefined ? override.required_checks : null,
     };
 }
 
@@ -191,9 +188,7 @@ function buildProtectionRulesetPayload({
     allowedMergeMethods = ['rebase', 'squash'],
     appId = null,
 }) {
-    const bypassActors = [
-        {actor_id: 1, actor_type: 'OrganizationAdmin', bypass_mode: 'always'},
-    ];
+    const bypassActors = [{actor_id: 1, actor_type: 'OrganizationAdmin', bypass_mode: 'always'}];
     if (appId) {
         bypassActors.push({
             actor_id: Number(appId),
@@ -242,9 +237,7 @@ function buildRulesetPayload({rulesetName, contexts}) {
         conditions: {
             ref_name: {include: ['~DEFAULT_BRANCH'], exclude: []},
         },
-        bypass_actors: [
-            {actor_id: 1, actor_type: 'OrganizationAdmin', bypass_mode: 'always'},
-        ],
+        bypass_actors: [{actor_id: 1, actor_type: 'OrganizationAdmin', bypass_mode: 'always'}],
         rules: [
             {
                 type: 'required_status_checks',
@@ -349,8 +342,7 @@ function cartesian(arrays) {
  * @returns {string[]}
  */
 function expandJobContexts(jobId, job = {}) {
-    const base =
-        typeof job.name === 'string' && !job.name.includes('${{') ? job.name : jobId;
+    const base = typeof job.name === 'string' && !job.name.includes('${{') ? job.name : jobId;
 
     const matrix = job.strategy && job.strategy.matrix;
     if (!matrix || typeof matrix !== 'object') return [base];
@@ -517,9 +509,7 @@ async function discoverContextsFromWorkflows(token, owner, name, ref) {
     }
     if (!Array.isArray(listing)) return {contexts: [], collisions: []};
 
-    const files = listing.filter(
-        (f) => f && f.type === 'file' && /\.ya?ml$/i.test(f.name || ''),
-    );
+    const files = listing.filter((f) => f && f.type === 'file' && /\.ya?ml$/i.test(f.name || ''));
 
     const byContext = new Map();
     for (const file of files) {
@@ -648,8 +638,7 @@ async function syncCiGate({token, owner, name, gate, protection, appId, dryRun})
     if (dryRun) {
         result.status = contexts.length ? 'dry-run' : 'skipped';
         if (!contexts.length) {
-            result.reason =
-                'no CI contexts discovered after filtering — CI gate left untouched';
+            result.reason = 'no CI contexts discovered after filtering — CI gate left untouched';
         }
         result.protection_action = protectionEnabled ? 'planned-if-missing' : 'disabled';
         return result;

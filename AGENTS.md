@@ -195,6 +195,8 @@ When `@diplodoc/infra` is used as a standalone npm package:
 - `sync-ci-gate.yml` — derives each repo's CI checks from workflow YAML and updates its `master CI gate` ruleset; runs weekly (`cron`) and on `workflow_dispatch` (ADR-002)
 - `check-pat-expiry.yml` — two scheduled reminders (~2 weeks and ~3 days before the current `INFRA_APPROVER_PAT` expiry) + `workflow_dispatch`; opens/updates a `pat-rotation` issue assigned to `@diplodoc-platform/team` when rotation is due (ADR-002). Cron dates are expiry-relative and must be updated on rotation.
 - `integration-test.yml` — pre-release smoke tests: applies scaffolding to 3 reference packages, runs their full CI
+- `dependency-risk-assessment.yml` — emits both a human-readable comment and a machine-readable risk/profile decision for actual dependency changes
+- `dependency-deep-verification.yml` — uses that dependency-diff decision to call testpack's exact-SHA reusable workflow for deep profiles in any distributed repository
 - `tests.yml`, `release.yml`, `release-please.yml`, etc. — standard CI for this package itself
 
 ### GitHub Tokens

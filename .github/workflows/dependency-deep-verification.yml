@@ -1,0 +1,19 @@
+name: Dependency Deep Verification
+
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: read
+
+jobs:
+  downstream:
+    if: contains(fromJSON('["cli","components","transform"]'), github.event.repository.name)
+    uses: diplodoc-platform/testpack/.github/workflows/downstream-check.yml@master
+    with:
+      package: ${{ github.event.repository.name }}
+      pr-sha: ${{ github.event.pull_request.head.sha }}
+      pr-number: ${{ github.event.pull_request.number }}

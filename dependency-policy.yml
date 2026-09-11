@@ -1,0 +1,71 @@
+# ============================================================================
+# Diplodoc Dependency Policy Registry
+# ============================================================================
+# Canonical single source of truth for known dependency constraints.
+# Every exact pin in package.json MUST have a corresponding entry here.
+# Indefinite exceptions are prohibited — every entry has an expires-at.
+#
+# Schema (mandatory fields per entry):
+#   id                   Unique identifier (DEP-NNNN)
+#   dependency           npm package name
+#   repositories         List of repos where the constraint applies
+#   allowed-version      The exact version that is pinned/permitted
+#   ignored-versions     Specific proven problematic versions (no open ranges)
+#   risk                 low | medium | high | critical
+#   category             Free-form category (e.g. output-regression, security)
+#   verification-profile Profile used to verify an update is safe
+#   reason               Human-readable reason for the constraint
+#   evidence             Object with links proving the problem
+#   owner                Responsible team/owner
+#   introduced-at        ISO date the constraint was introduced
+#   review-after         ISO date to revisit the constraint
+#   expires-at           ISO date after which the constraint is invalid (no indefinite)
+#   exit-criteria        List of conditions that must hold to remove the constraint
+#
+# Security exceptions additionally require:
+#   security-assessment    Description of the vulnerability/risk assessment
+#   compensating-measures  Measures mitigating the risk while the exception holds
+# ============================================================================
+
+schema-version: '1.0'
+registry-owner: diplodoc-platform/infra
+last-updated: 2026-08-23
+
+entries:
+  - id: DEP-0001
+    dependency: svgo
+    repositories: [cli, transform]
+    allowed-version: 3.3.2
+    ignored-versions: [3.3.3, 3.3.4]
+    risk: high
+    category: output-regression
+    verification-profile: document-rendering
+    reason: 'Newer versions break large SVG diagrams'
+    evidence:
+      upstream-issue: https://github.com/svg/svgo/issues/2218
+    owner: diplodoc-platform/team
+    introduced-at: 2026-06-21
+    review-after: 2026-09-01
+    expires-at: 2026-12-01
+    exit-criteria:
+      - Upstream issue is fixed
+      - Rendering regression fixture passes
+
+  - id: DEP-0002
+    dependency: stylelint
+    repositories: [infra]
+    allowed-version: 15
+    ignored-versions: []
+    risk: low
+    category: tooling-compatibility
+    verification-profile: standard
+    reason: '@gravity-ui/stylelint-config 4.0.1 requires stylelint ^15.8.0'
+    evidence:
+      peer-contract: https://www.npmjs.com/package/@gravity-ui/stylelint-config/v/4.0.1
+    owner: diplodoc-platform/team
+    introduced-at: 2024-08-11
+    review-after: 2026-10-01
+    expires-at: 2026-12-01
+    exit-criteria:
+      - Upgrade @gravity-ui/stylelint-config to 5.x
+      - Upgrade stylelint to 16.x

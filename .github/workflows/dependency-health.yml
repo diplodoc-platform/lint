@@ -1,0 +1,245 @@
+name: Dependency Health Audit
+
+# Central daily audit of all Diplodoc platform repositories for Dependabot
+# PR SLA compliance. This is an infra-only workflow (NOT distributed via
+# scaffolding) — it runs centrally in the infra repo using a GitHub App
+# installation token that has read access to every target repository.
+#
+# SLA (see PLAN.md §5 and T8.1):
+#   - Critical security  — 1 business day
+#   - Other security     — 3 business days
+#   - Patch               — 7 calendar days
+#   - Minor               — 14 calendar days
+#   - Major               — 30 calendar days
+#   - Exception review    — at least every 90 days (registry review-after)
+#
+# The audit exits non-zero when any PR breaches its SLA or any registry
+# exception is overdue, so the daily run surfaces as a failing check in the
+# infra repo. The generated report (JSON + markdown) is uploaded as an
+# artifact for human inspection and consumed by the Daily Summary (T8.2).
+
+on:
+  schedule:
+    # 07:00 UTC daily (weekdays). GitHub Actions cron only triggers on the
+    # default branch. Sunday runs are a no-cost "weekend catch-up".
+    - cron: '0 7 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      skip_checks:
+        description: 'Skip per-PR check-status lookup (faster)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  audit:
+    name: Dependency Health Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js and install dependencies
+        uses: diplodoc-platform/setup-node-action@v1
+        with:
+          node-version: ${{ vars.NODE_VERSION || '24' }}
+          cache: ''
+
+      # Org-wide GitHub App token. The App must be installed on every target
+      # repository (or org-wide) with "Contents: read" + "Metadata: read"
+      # permissions so it can list PRs and commit statuses across all 28
+      # repos. See docs/dependency-health-app.md for setup.
+      - name: Generate App token (org-wide audit access)
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.INFRA_APP_ID }}
+          private-key: ${{ secrets.INFRA_APP_PRIVATE_KEY }}
+          owner: diplodoc-platform
+
+      - name: Run dependency health audit
+        id: audit
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SKIP_CHECKS: ${{ inputs.skip_checks }}
+        run: |
+          mkdir -p .status
+          SKIP_FLAG=""
+          if [ "${SKIP_CHECKS}" = "true" ]; then
+            SKIP_FLAG="--skip-checks"
+          fi
+          # Non-zero exit when SLA breached / exceptions overdue is expected —
+          # capture it so the report is still uploaded below.
+          set +e
+          node scripts/dependency-health.js \
+            --all \
+            --output .status/dependency-health.json \
+            --markdown .status/dependency-health.md \
+            $SKIP_FLAG
+          echo "exit-code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Generate daily dependency summary
+        id: summary
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SKIP_CHECKS: ${{ inputs.skip_checks }}
+        run: |
+          SKIP_FLAG=""
+          if [ "${SKIP_CHECKS}" = "true" ]; then
+            SKIP_FLAG="--skip-checks"
+          fi
+          # The summary script exits non-zero when actionable items are found.
+          # Capture the exit code so the issue is still posted below.
+          set +e
+          node scripts/dependency-summary.js \
+            --all \
+            --output .status/dependency-summary.json \
+            --markdown .status/dependency-summary.md \
+            $SKIP_FLAG
+          echo "exit-code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Upload summary report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-summary-report
+          path: .status/dependency-summary.*
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Post daily summary as tracking issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          if [ ! -f .status/dependency-summary.md ]; then
+            echo "No summary file found, skipping issue post."
+            exit 0
+          fi
+          DATE=$(date -u +%Y-%m-%d)
+          TITLE="Daily Dependency Health Summary — ${DATE}"
+          # Check if an issue with this title already exists (avoid duplicates).
+          EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" \
+            --search "${TITLE} in:title" --state open --json number --limit 1 2>/dev/null || echo "")
+          BODY=$(cat .status/dependency-summary.md)
+          if [ -n "$EXISTING" ] && [ "$EXISTING" != "[]" ]; then
+            NUMBER=$(echo "$EXISTING" | jq -r '.[0].number')
+            gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+            echo "Updated existing issue #$NUMBER"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "$TITLE" \
+              --body "$BODY" \
+              --label "dependency-health,summary"
+            echo "Created new daily summary issue"
+          fi
+
+      - name: Upload health report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-health-report
+          path: .status/dependency-health.*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Auto-assign owners to SLA-breaching PRs
+        id: assign
+        if: always()
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SKIP_CHECKS: ${{ inputs.skip_checks }}
+        run: |
+          SKIP_FLAG=""
+          if [ "${SKIP_CHECKS}" = "true" ]; then
+            SKIP_FLAG="--skip-checks"
+          fi
+          # The assign script exits non-zero when SLA breaches are found
+          # (so the daily run surfaces as failing). Capture the exit code so
+          # the report is still uploaded above and the job summary is written.
+          set +e
+          node scripts/dependency-assign.js \
+            --all \
+            --output .status/dependency-assign.json \
+            --markdown .status/dependency-assign.md \
+            $SKIP_FLAG
+          echo "exit-code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Upload assign report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-assign-report
+          path: .status/dependency-assign.*
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Write job summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let health;
+            try {
+              health = JSON.parse(fs.readFileSync('.status/dependency-health.json', 'utf8'));
+            } catch (err) {
+              core.warning(`Could not read health report: ${err.message}`);
+            }
+            let summary;
+            try {
+              summary = JSON.parse(fs.readFileSync('.status/dependency-summary.json', 'utf8'));
+            } catch (err) {
+              core.warning(`Could not read summary report: ${err.message}`);
+            }
+            const parts = [];
+            if (health) {
+              const s = health.summary || {};
+              parts.push(
+                `## Dependency Health Audit\n\n` +
+                `- Total PRs: **${s.totalPrs ?? 0}**\n` +
+                `- Breaching SLA: **${s.breachingPrs ?? 0}**\n` +
+                `- Security PRs (breaching): **${s.securityPrs ?? 0}** (**${s.securityBreaching ?? 0}**)\n` +
+                `- Critical-risk PRs (breaching): **${s.criticalPrs ?? 0}** (**${s.criticalBreaching ?? 0}**)\n` +
+                `- Failing checks: **${s.failingPrs ?? 0}**\n` +
+                `- Registry exceptions: **${s.totalExceptions ?? 0}** (expiring: ${s.expiringExceptions ?? 0}, overdue: ${s.overdueExceptions ?? 0})\n`,
+              );
+            }
+            if (summary) {
+                const t = summary.totals || {};
+                parts.push(
+                    `## Daily Summary\n\n` +
+                    `- Actionable items: **${t.actionableItems ?? 0}**\n` +
+                    `- PRs without owner: **${t.prsWithoutOwner ?? 0}**\n` +
+                    `- Failing checks: **${t.failedChecks ?? 0}**\n` +
+                    `- SLA breaches: **${t.slaBreaches ?? 0}**\n` +
+                    `- Expiring exceptions: **${t.expiringExceptions ?? 0}**\n` +
+                    `- Unpinned versions: **${t.unpinnedVersions ?? 0}**\n` +
+                    `- Stale policy entries: **${t.stalePolicyEntries ?? 0}**\n` +
+                    `- Repos at PR limit: **${t.reposAtPrLimit ?? 0}**\n`,
+                );
+            }
+            let assign;
+            try {
+                assign = JSON.parse(fs.readFileSync('.status/dependency-assign.json', 'utf8'));
+            } catch (err) {
+                core.warning(`Could not read assign report: ${err.message}`);
+            }
+            if (assign) {
+                parts.push(
+                    `## Auto-Assign (T8.3)\n\n` +
+                    `- SLA-breaching PRs assigned: **${(assign.actions || []).length}**\n` +
+                    (assign.issue ? `- Tracking issue: #${assign.issue.number} (${assign.issue.created ? 'created' : 'updated'})\n` : ''),
+                );
+            }
+            if (parts.length > 0) {
+              await core.summary.addRaw(parts.join('\n')).write();
+            }
+
+      - name: Fail on SLA breach / overdue exception / actionable items
+        if: steps.audit.outputs.exit-code != '0' || steps.summary.outputs.exit-code != '0' || steps.assign.outputs.exit-code != '0'
+        run: |
+          echo "::error::Dependency health audit found SLA breaches, overdue exceptions, actionable summary items, or unassigned SLA-breaching PRs. See uploaded reports and tracking issue."
+          exit 1
