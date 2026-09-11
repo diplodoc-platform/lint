@@ -50,3 +50,22 @@ entries:
     exit-criteria:
       - Upstream issue is fixed
       - Rendering regression fixture passes
+
+  - id: DEP-0002
+    dependency: stylelint
+    repositories: [infra]
+    allowed-version: 15
+    ignored-versions: []
+    risk: low
+    category: tooling-compatibility
+    verification-profile: standard
+    reason: '@gravity-ui/stylelint-config 4.0.1 requires stylelint ^15.8.0'
+    evidence:
+      peer-contract: https://www.npmjs.com/package/@gravity-ui/stylelint-config/v/4.0.1
+    owner: diplodoc-platform/team
+    introduced-at: 2024-08-11
+    review-after: 2026-10-01
+    expires-at: 2026-12-01
+    exit-criteria:
+      - Upgrade @gravity-ui/stylelint-config to 5.x
+      - Upgrade stylelint to 16.x
